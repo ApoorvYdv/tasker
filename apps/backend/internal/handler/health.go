@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sriniously/go-boilerplate/internal/middleware"
-	"github.com/sriniously/go-boilerplate/internal/server"
+	"github.com/ApoorvYdv/go-tasker/internal/middleware"
+	"github.com/ApoorvYdv/go-tasker/internal/server"
 
 	"github.com/labstack/echo/v4"
 )
