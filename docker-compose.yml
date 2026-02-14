@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      - POSTGRES_USER=username
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=tasker_api
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9002:9002"
+      - "9003:9003"
+    volumes:
+      - minio_storage:/data
+    environment:
+      MINIO_ROOT_USER: username
+      MINIO_ROOT_PASSWORD: password
+    command: server --address :9002 --console-address :9003 /data
+
+  redis:
+    image: redis:8.4.0-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --requirepass password
+      --save 60 1
+      --loglevel warning
+    volumes:
+      - redis_data:/data
+
+volumes:
+  db:
+  minio_storage: {}
+  redis_data:
+    driver: local
