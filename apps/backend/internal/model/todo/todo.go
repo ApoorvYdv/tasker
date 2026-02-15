@@ -57,9 +57,17 @@ type PopulatedTodo struct {
 
 type TodoStats struct {
 	Total     int `json:"total" db:"total"`
-	Draft     int `json:"draft" db:"draft"` 
+	Draft     int `json:"draft" db:"draft"`
 	Active    int `json:"active" db:"active"`
 	Completed int `json:"completed" db:"completed"`
 	Archived  int `json:"archived" db:"archived"`
 	Overdue   int `json:"overdue" db:"overdue"`
+}
+
+func (t *Todo) IsOverdue() bool {
+	return t.Status != StatusCompleted && t.DueDate != nil && t.DueDate.Before(time.Now())
+}
+
+func (t *Todo) CanHaveChildren() bool {
+	return t.ParentTodoID == nil
 }

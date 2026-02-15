@@ -120,21 +120,26 @@ func (r *TodoRepository) GetTodoByID(ctx context.Context, user_id string, todoID
 	return &todoItem, nil
 }
 
-func (r *TodoRepository) CheckTodoExists(ctx context.Context, user_id string, todoID uuid.UUID) (bool, error) {
-	stmt := `SELECT EXISTS(
-		SELECT 1 FROM todos WHERE id=@id AND user_id=@user_id
-	)`
+func (r *TodoRepository) CheckTodoExists(ctx context.Context, userID string, todoID uuid.UUID) (*todo.Todo, error) {
+	stmt := `
+		SELECT * FROM todos
+		WHERE id=@id AND user_id=@user_id
+	`
 
 	rows, err := r.server.DB.Pool.Query(ctx, stmt, pgx.NamedArgs{
 		"id":      todoID,
-		"user_id": user_id,
+		"user_id": userID,
 	})
-
 	if err != nil {
-		return false, fmt.Errorf("failed to check if todo with id=%s for user_id=%s exists: %w", todoID, user_id, err)
+		return nil, fmt.Errorf("failed to check if todo exists for todo_id=%s user_id=%s: %w", todoID.String(), userID, err)
 	}
 
-	return pgx.CollectOneRow(rows, pgx.RowTo[bool])
+	todoItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[todo.Todo])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect row from table:todos for todo_id=%s user_id=%s: %w", todoID.String(), userID, err)
+	}
+
+	return &todoItem, nil
 }
 
 func (r *TodoRepository) GetTodos(ctx context.Context, userID string, query *todo.GetTodosQuery) (*model.PaginatedResponse[todo.PopulatedTodo], error) {
