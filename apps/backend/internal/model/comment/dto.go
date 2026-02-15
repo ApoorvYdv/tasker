@@ -5,13 +5,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// --- Create Comment ---
-type CreateCommentRequest struct {
+// --- Add Comment ---
+type AddCommentRequest struct {
 	TodoID  uuid.UUID `json:"todoId" validate:"required,uuid"`
 	Content string    `json:"content" validate:"required,min=1,max=1000"`
 }
 
-func (r *CreateCommentRequest) Validate() error {
+func (r *AddCommentRequest) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }

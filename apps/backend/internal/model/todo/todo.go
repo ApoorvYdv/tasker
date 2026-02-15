@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/ApoorvYdv/go-tasker/internal/model"
+	"github.com/ApoorvYdv/go-tasker/internal/model/category"
+	"github.com/ApoorvYdv/go-tasker/internal/model/comment"
 	"github.com/google/uuid"
 )
 
@@ -44,4 +46,20 @@ type Metadata struct {
 	Reminder   *string  `json:"reminder"`
 	Color      *string  `json:"color"`
 	Difficulty *int     `json:"difficulty"`
+}
+
+type PopulatedTodo struct {
+	Todo
+	Category *category.Category `json:"category" db:"category"`
+	Children []*Todo            `json:"children" db:"children"`
+	Comments []comment.Comment  `json:"comments" db:"comments"`
+}
+
+type TodoStats struct {
+	Total     int `json:"total" db:"total"`
+	Draft     int `json:"draft" db:"draft"` 
+	Active    int `json:"active" db:"active"`
+	Completed int `json:"completed" db:"completed"`
+	Archived  int `json:"archived" db:"archived"`
+	Overdue   int `json:"overdue" db:"overdue"`
 }
