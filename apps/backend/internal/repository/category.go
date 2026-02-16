@@ -22,7 +22,7 @@ func NewCategoryRepository(server *server.Server) *CategoryRepository {
 }
 
 func (r *CategoryRepository) CreateCategory(ctx context.Context, userID string,
-	payload *category.CreateCategoryRequest,
+	payload *category.CreateCategoryPayload,
 ) (*category.Category, error) {
 	stmt := `
 		INSERT INTO
@@ -89,7 +89,7 @@ func (r *CategoryRepository) GetCategoryByID(ctx context.Context, userID string,
 }
 
 func (r *CategoryRepository) GetCategories(ctx context.Context, userID string,
-	query *category.GetCategoriesRequest,
+	query *category.GetCategoriesQuery,
 ) (*model.PaginatedResponse[category.Category], error) {
 	stmt := `
 		SELECT
@@ -180,7 +180,7 @@ func (r *CategoryRepository) GetCategories(ctx context.Context, userID string,
 }
 
 func (r *CategoryRepository) UpdateCategory(ctx context.Context, userID string,
-	categoryID uuid.UUID, payload *category.UpdateCategoryRequest,
+	categoryID uuid.UUID, payload *category.UpdateCategoryPayload,
 ) (*category.Category, error) {
 	stmt := `UPDATE todo_categories SET `
 	args := pgx.NamedArgs{

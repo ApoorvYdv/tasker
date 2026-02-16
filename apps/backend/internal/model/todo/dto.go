@@ -8,7 +8,7 @@ import (
 )
 
 // --- Create Todo ---
-type CreateTodoRequest struct {
+type CreateTodoPayload struct {
 	Title        string     `json:"title" validate:"required,min=3,max=255"`
 	Description  *string    `json:"description" validate:"omitempty,max=1000"`
 	Priority     *Priority  `json:"priority" validate:"omitempty,oneof=low medium high"`
@@ -18,13 +18,13 @@ type CreateTodoRequest struct {
 	Metadata     *Metadata  `json:"metadata"`
 }
 
-func (p *CreateTodoRequest) Validate() error {
+func (p *CreateTodoPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(p)
 }
 
 // --- Update Todo ---
-type UpdateTodoRequest struct {
+type UpdateTodoPayload struct {
 	ID           uuid.UUID  `param:"id" validate:"required,uuid"`
 	Title        *string    `json:"title" validate:"omitempty,min=3,max=255"`
 	Description  *string    `json:"description" validate:"omitempty,max=1000"`
@@ -36,7 +36,7 @@ type UpdateTodoRequest struct {
 	Metadata     *Metadata  `json:"metadata"`
 }
 
-func (p *UpdateTodoRequest) Validate() error {
+func (p *UpdateTodoPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(p)
 }
@@ -90,29 +90,29 @@ func (q *GetTodosQuery) Validate() error {
 }
 
 // --- Get Todo by ID ---
-type GetTodoByIDRequest struct {
+type GetTodoByIDPayload struct {
 	ID uuid.UUID `param:"id" validate:"required,uuid"`
 }
 
-func (r *GetTodoByIDRequest) Validate() error {
+func (r *GetTodoByIDPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }
 
 // --- Delete Todo ---
-type DeleteTodoRequest struct {
+type DeleteTodoPayload struct {
 	ID uuid.UUID `param:"id" validate:"required,uuid"`
 }
 
-func (r *DeleteTodoRequest) Validate() error {
+func (r *DeleteTodoPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }
 
 // --- Get Todo Stats ---
-type GetTodoStatsRequest struct {
+type GetTodoStatsPayload struct {
 }
 
-func (r *GetTodoStatsRequest) Validate() error {
+func (r *GetTodoStatsPayload) Validate() error {
 	return nil
 }

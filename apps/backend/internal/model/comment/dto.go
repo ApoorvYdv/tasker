@@ -6,43 +6,43 @@ import (
 )
 
 // --- Add Comment ---
-type AddCommentRequest struct {
+type AddCommentPayload struct {
 	TodoID  uuid.UUID `json:"todoId" validate:"required,uuid"`
 	Content string    `json:"content" validate:"required,min=1,max=1000"`
 }
 
-func (r *AddCommentRequest) Validate() error {
+func (r *AddCommentPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }
 
 // --- Get Comments ---
-type GetCommentsRequest struct {
+type GetCommentsByTodoIDPayload struct {
 	TodoID uuid.UUID `param:"todoId" validate:"required,uuid"`
 }
 
-func (r *GetCommentsRequest) Validate() error {
+func (r *GetCommentsByTodoIDPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }
 
 // --- Update Comment ---
-type UpdateCommentRequest struct {
+type UpdateCommentPayload struct {
 	ID      uuid.UUID `param:"id" validate:"required,uuid"`
 	Content string    `json:"content" validate:"required,min=1,max=1000"`
 }
 
-func (r *UpdateCommentRequest) Validate() error {
+func (r *UpdateCommentPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }
 
 // --- Delete Comment ---
-type DeleteCommentRequest struct {
+type DeleteCommentPayload struct {
 	ID uuid.UUID `param:"id" validate:"required,uuid"`
 }
 
-func (r *DeleteCommentRequest) Validate() error {
+func (r *DeleteCommentPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }

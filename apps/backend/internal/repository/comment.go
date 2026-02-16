@@ -19,7 +19,7 @@ func NewCommentRepository(server *server.Server) *CommentRepository {
 }
 
 func (r *CommentRepository) AddComment(ctx context.Context, userID string, todoID uuid.UUID,
-	payload *comment.AddCommentRequest,
+	payload *comment.AddCommentPayload,
 ) (*comment.Comment, error) {
 	stmt := `
 		INSERT INTO

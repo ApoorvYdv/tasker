@@ -27,7 +27,7 @@ func NewTodoService(server *server.Server, todoRepo *repository.TodoRepository,
 	}
 }
 
-func (s *TodoService) CreateTodo(ctx echo.Context, userID string, payload *todo.CreateTodoRequest) (*todo.Todo, error) {
+func (s *TodoService) CreateTodo(ctx echo.Context, userID string, payload *todo.CreateTodoPayload) (*todo.Todo, error) {
 	logger := middleware.GetLogger(ctx)
 
 	// Validate parent todo exists and belongs to user (if provided)
@@ -102,7 +102,7 @@ func (s *TodoService) GetTodos(ctx echo.Context, userID string, query *todo.GetT
 	return result, nil
 }
 
-func (s *TodoService) UpdateTodo(ctx echo.Context, userID string, payload *todo.UpdateTodoRequest) (*todo.Todo, error) {
+func (s *TodoService) UpdateTodo(ctx echo.Context, userID string, payload *todo.UpdateTodoPayload) (*todo.Todo, error) {
 	logger := middleware.GetLogger(ctx)
 
 	// Validate parent todo exists and belongs to user (if provided)

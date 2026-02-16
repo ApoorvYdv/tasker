@@ -24,7 +24,7 @@ func NewCommentService(server *server.Server, commentRepo *repository.CommentRep
 }
 
 func (s *CommentService) AddComment(ctx echo.Context, userID string, todoID uuid.UUID,
-	payload *comment.AddCommentRequest,
+	payload *comment.AddCommentPayload,
 ) (*comment.Comment, error) {
 	logger := middleware.GetLogger(ctx)
 

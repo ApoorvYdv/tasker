@@ -23,7 +23,7 @@ func NewTodoRepository(server *server.Server) *TodoRepository {
 	return &TodoRepository{server: server}
 }
 
-func (r *TodoRepository) CreateTodo(ctx context.Context, user_id string, request *todo.CreateTodoRequest) (*todo.Todo, error) {
+func (r *TodoRepository) CreateTodo(ctx context.Context, user_id string, request *todo.CreateTodoPayload) (*todo.Todo, error) {
 	stmt := `INSERT INTO todos 
 				(user_id, title, description, due_date, priority, parent_todo_id, category_id, metadata) 
 				VALUES (@user_id, @title, @description, @due_date, @priority, @parent_todo_id, @category_id, @metadata) 
@@ -310,7 +310,7 @@ func (r *TodoRepository) GetTodos(ctx context.Context, userID string, query *tod
 	}, nil
 }
 
-func (r *TodoRepository) UpdateTodo(ctx context.Context, userID string, payload *todo.UpdateTodoRequest) (*todo.Todo, error) {
+func (r *TodoRepository) UpdateTodo(ctx context.Context, userID string, payload *todo.UpdateTodoPayload) (*todo.Todo, error) {
 	stmt := "UPDATE todos SET "
 	args := pgx.NamedArgs{
 		"todo_id": payload.ID,

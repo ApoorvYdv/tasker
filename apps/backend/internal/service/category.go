@@ -23,7 +23,7 @@ func NewCategoryService(server *server.Server, categoryRepo *repository.Category
 }
 
 func (s *CategoryService) CreateCategory(ctx echo.Context, userID string,
-	payload *category.CreateCategoryRequest,
+	payload *category.CreateCategoryPayload,
 ) (*category.Category, error) {
 	logger := middleware.GetLogger(ctx)
 
@@ -46,7 +46,7 @@ func (s *CategoryService) CreateCategory(ctx echo.Context, userID string,
 }
 
 func (s *CategoryService) GetCategories(ctx echo.Context, userID string,
-	query *category.GetCategoriesRequest,
+	query *category.GetCategoriesQuery,
 ) (*model.PaginatedResponse[category.Category], error) {
 	logger := middleware.GetLogger(ctx)
 
@@ -72,7 +72,7 @@ func (s *CategoryService) GetCategoryByID(ctx echo.Context, userID string, categ
 }
 
 func (s *CategoryService) UpdateCategory(ctx echo.Context, userID string, categoryID uuid.UUID,
-	payload *category.UpdateCategoryRequest,
+	payload *category.UpdateCategoryPayload,
 ) (*category.Category, error) {
 	logger := middleware.GetLogger(ctx)
 

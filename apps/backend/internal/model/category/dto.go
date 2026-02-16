@@ -6,19 +6,19 @@ import (
 )
 
 // --- Create Category ---
-type CreateCategoryRequest struct {
+type CreateCategoryPayload struct {
 	Name        string  `json:"name" validate:"required,min=3,max=100"`
 	Description *string `json:"description" validate:"omitempty,max=1000"`
 	Color       *string `json:"color" validate:"omitempty,hexcolor"`
 }
 
-func (r *CreateCategoryRequest) Validate() error {
+func (r *CreateCategoryPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }
 
 // --- Get Categories ---
-type GetCategoriesRequest struct {
+type GetCategoriesQuery struct {
 	Page   *int    `query:"page" validate:"omitempty,min=1"`
 	Limit  *int    `query:"limit" validate:"omitempty,min=1,max=100"`
 	Sort   *string `query:"sort" validate:"omitempty,oneof=created_at updated_at name"`
@@ -26,7 +26,7 @@ type GetCategoriesRequest struct {
 	Search *string `query:"search" validate:"omitempty,min=1"`
 }
 
-func (r *GetCategoriesRequest) Validate() error {
+func (r *GetCategoriesQuery) Validate() error {
 	validate := validator.New()
 
 	if err := validate.Struct(r); err != nil {
@@ -68,24 +68,24 @@ func (r *GetCategoryByIDRequest) Validate() error {
 }
 
 // --- Update Category ---
-type UpdateCategoryRequest struct {
+type UpdateCategoryPayload struct {
 	ID          uuid.UUID `param:"id" validate:"required,uuid"`
 	Name        *string   `json:"name" validate:"omitempty,min=3,max=100"`
 	Description *string   `json:"description" validate:"omitempty,max=1000"`
 	Color       *string   `json:"color" validate:"omitempty,hexcolor"`
 }
 
-func (r *UpdateCategoryRequest) Validate() error {
+func (r *UpdateCategoryPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }
 
 // --- Delete Category ---
-type DeleteCategoryRequest struct {
+type DeleteCategoryPayload struct {
 	ID uuid.UUID `param:"id" validate:"required,uuid"`
 }
 
-func (r *DeleteCategoryRequest) Validate() error {
+func (r *DeleteCategoryPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }
