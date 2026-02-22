@@ -109,6 +109,10 @@ The backend uses environment variables prefixed with `TASKER_`. Key variables in
 - `TASKER_EMAIL_*` - Email service configuration
 - `TASKER_OBSERVABILITY_*` - Monitoring settings
 
+For migrations, use the following environment variables:
+
+- `TASKER_DB_DSN` - PostgreSQL connection string (e.g. `postgres://username:password@localhost:5432/tasker_api?sslmode=disable`)
+
 See `apps/backend/.env.example` for a complete list.
 
 ## Architecture

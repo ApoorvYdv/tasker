@@ -116,3 +116,35 @@ type GetTodoStatsPayload struct {
 func (r *GetTodoStatsPayload) Validate() error {
 	return nil
 }
+
+// --- Upload Todo Attachment ---
+type UploadTodoAttachmentPayload struct {
+	TodoID string `param:"todoId" validate:"required,uuid"`
+}
+
+func (r *UploadTodoAttachmentPayload) Validate() error {
+	validate := validator.New()
+	return validate.Struct(r)
+}
+
+// --- Delete Todo Attachment ---
+type DeleteTodoAttachmentPayload struct {
+	TodoID       string `param:"todoId" validate:"required,uuid"`
+	AttachmentID string `param:"attachmentId" validate:"required,uuid"`
+}
+
+func (r *DeleteTodoAttachmentPayload) Validate() error {
+	validate := validator.New()
+	return validate.Struct(r)
+}
+
+// --- Get Todo Attachment ---
+type GetTodoAttachmentPayload struct {
+	TodoID       string `param:"todoId" validate:"required,uuid"`
+	AttachmentID string `param:"attachmentId" validate:"required,uuid"`
+}
+
+func (r *GetTodoAttachmentPayload) Validate() error {
+	validate := validator.New()
+	return validate.Struct(r)
+}
