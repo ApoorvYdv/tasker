@@ -1,7 +1,12 @@
 package service
 
 import (
+	"fmt"
+	"mime/multipart"
+	"net/http"
+
 	"github.com/ApoorvYdv/go-tasker/internal/errs"
+	"github.com/ApoorvYdv/go-tasker/internal/lib/aws"
 	"github.com/ApoorvYdv/go-tasker/internal/middleware"
 	"github.com/ApoorvYdv/go-tasker/internal/model"
 	"github.com/ApoorvYdv/go-tasker/internal/model/todo"
@@ -9,21 +14,25 @@ import (
 	"github.com/ApoorvYdv/go-tasker/internal/server"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 type TodoService struct {
 	server       *server.Server
 	todoRepo     *repository.TodoRepository
 	categoryRepo *repository.CategoryRepository
+	awsClient    *aws.AWS
 }
 
 func NewTodoService(server *server.Server, todoRepo *repository.TodoRepository,
 	categoryRepo *repository.CategoryRepository,
+	awsClient *aws.AWS,
 ) *TodoService {
 	return &TodoService{
 		server:       server,
 		todoRepo:     todoRepo,
 		categoryRepo: categoryRepo,
+		awsClient:    awsClient,
 	}
 }
 
@@ -193,4 +202,154 @@ func (s *TodoService) GetTodoStats(ctx echo.Context, userID string) (*todo.TodoS
 	}
 
 	return stats, nil
+}
+
+func (s *TodoService) UploadTodoAttachment(ctx echo.Context, userID string, todoID uuid.UUID, fileHeader *multipart.FileHeader) (*todo.Attachment, error) {
+	logger := middleware.GetLogger(ctx)
+
+	// Validate todo exists and belongs to user
+	_, err := s.todoRepo.CheckTodoExists(ctx.Request().Context(), userID, todoID)
+	if err != nil {
+		logger.Error().Err(err).Msg("todo validation failed")
+		return nil, err
+	}
+
+	// Upload file to S3
+	file, err := fileHeader.Open()
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to open file")
+		return nil, errs.NewBadRequestError("failed to open file", false, nil, nil, nil)
+	}
+	defer file.Close()
+
+	// Generate unique key for S3
+	key := fmt.Sprintf("todos/attachments/%s/%s", todoID.String(), fileHeader.Filename)
+
+	// Upload to S3
+	_, err = s.awsClient.S3Client.UploadFile(ctx.Request().Context(), s.server.Config.AWS.Bucket, key, file)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to upload file to S3")
+		return nil, errors.Wrap(err, "failed to upload file")
+	}
+
+	// Detect MIME type
+	file, err = fileHeader.Open()
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to open file")
+		return nil, errs.NewBadRequestError("failed to open file", false, nil, nil, nil)
+	}
+	defer file.Close()
+
+	buffer := make([]byte, 512)
+	_, err = file.Read(buffer)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to read file")
+		return nil, errs.NewBadRequestError("failed to read file", false, nil, nil, nil)
+	}
+	mimeType := http.DetectContentType(buffer)
+
+	// Create attachment record in database
+	attachment, err := s.todoRepo.UploadTodoAttachment(ctx.Request().Context(), userID, todoID, fileHeader.Filename, fileHeader.Size, mimeType, key)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to create attachment record")
+		return nil, err
+	}
+
+	// Business event log
+	eventLogger := middleware.GetLogger(ctx)
+	eventLogger.Info().
+		Str("event", "todo_attachment_uploaded").
+		Str("todo_id", todoID.String()).
+		Str("attachment_id", attachment.ID.String()).
+		Str("s3_key", attachment.DownloadKey).
+		Msg("Attachment uploaded successfully")
+
+	return attachment, nil
+}
+
+func (s *TodoService) GetTodoAttachments(ctx echo.Context, userID string, todoID uuid.UUID) ([]todo.Attachment, error) {
+	logger := middleware.GetLogger(ctx)
+
+	// Validate todo exists and belongs to user
+	_, err := s.todoRepo.CheckTodoExists(ctx.Request().Context(), userID, todoID)
+	if err != nil {
+		logger.Error().Err(err).Msg("todo validation failed")
+		return nil, err
+	}
+
+	attachments, err := s.todoRepo.GetTodoAttachments(ctx.Request().Context(), todoID)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to fetch todo attachments")
+		return nil, err
+	}
+
+	return attachments, nil
+}
+
+func (s *TodoService) DeleteTodoAttachment(ctx echo.Context, userID string, todoID uuid.UUID, attachmentID uuid.UUID) error {
+	logger := middleware.GetLogger(ctx)
+
+	// Validate todo exists and belongs to user
+	_, err := s.todoRepo.CheckTodoExists(ctx.Request().Context(), userID, todoID)
+	if err != nil {
+		logger.Error().Err(err).Msg("todo validation failed")
+		return err
+	}
+
+	// Get attachment to get S3 key
+	attachment, err := s.todoRepo.GetTodoAttachment(ctx.Request().Context(), todoID, attachmentID)
+	if err != nil {
+		logger.Error().Err(err).Msg("attachment validation failed")
+		return err
+	}
+
+	// Delete from S3 asynchronously
+	go func() {
+		if err := s.awsClient.S3Client.DeleteFile(ctx.Request().Context(), s.server.Config.AWS.Bucket, attachment.DownloadKey); err != nil {
+			logger.Error().Err(err).Msg("failed to delete file from S3")
+		}
+	}()
+
+	// Delete from database
+	if err := s.todoRepo.DeleteTodoAttachment(ctx.Request().Context(), todoID, attachmentID); err != nil {
+		logger.Error().Err(err).Msg("failed to delete attachment record")
+		return err
+	}
+
+	// Business event log
+	eventLogger := middleware.GetLogger(ctx)
+	eventLogger.Info().
+		Str("event", "todo_attachment_deleted").
+		Str("todo_id", todoID.String()).
+		Str("attachment_id", attachmentID.String()).
+		Msg("Attachment deleted successfully")
+
+	return nil
+}
+
+func (s *TodoService) GetTodoAttachmentURL(ctx echo.Context, userID string, todoID uuid.UUID, attachmentID uuid.UUID) (string, error) {
+	logger := middleware.GetLogger(ctx)
+
+	// Validate todo exists and belongs to user
+	_, err := s.todoRepo.CheckTodoExists(ctx.Request().Context(), userID, todoID)
+	if err != nil {
+		logger.Error().Err(err).Msg("todo validation failed")
+		return "", err
+	}
+
+	// Get attachment to get S3 key
+	attachment, err := s.todoRepo.GetTodoAttachment(ctx.Request().Context(), todoID, attachmentID)
+	if err != nil {
+		logger.Error().Err(err).Msg("attachment validation failed")
+		return "", err
+	}
+
+	// Get presigned URL from S3
+	url, err := s.awsClient.S3Client.GetPresignedUrl(ctx.Request().Context(), s.server.Config.AWS.Bucket, attachment.DownloadKey)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to get presigned URL")
+		return "", err
+	}
+
+	return url, nil
 }

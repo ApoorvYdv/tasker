@@ -473,3 +473,104 @@ func (r *TodoRepository) GetTodoStats(ctx context.Context, userID string) (*todo
 
 	return &stats, nil
 }
+
+func (r *TodoRepository) GetTodoAttachment(ctx context.Context, todoID uuid.UUID, attachmentID uuid.UUID) (*todo.Attachment, error) {
+	stmt := `
+		SELECT *
+		FROM todo_attachments
+		WHERE todo_id=@todo_id AND id=@attachment_id
+	`
+
+	rows, err := r.server.DB.Pool.Query(ctx, stmt, pgx.NamedArgs{
+		"todo_id":       todoID,
+		"attachment_id": attachmentID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	attachments, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[todo.Attachment])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			code := "ATTACHMENT_NOT_FOUND"
+			return nil, errs.NewNotFoundError("attachment not found", false, &code)
+		}
+		return nil, fmt.Errorf("failed to collect rows from table:todo_attachments: %w", err)
+	}
+
+	return &attachments, nil
+}
+
+func (r *TodoRepository) GetTodoAttachments(ctx context.Context, todoID uuid.UUID) ([]todo.Attachment, error) {
+	stmt := `
+		SELECT *
+		FROM todo_attachments
+		WHERE todo_id=@todo_id ORDER BY created_at DESC
+	`
+
+	rows, err := r.server.DB.Pool.Query(ctx, stmt, pgx.NamedArgs{
+		"todo_id": todoID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	attachments, err := pgx.CollectRows(rows, pgx.RowToStructByName[todo.Attachment])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return []todo.Attachment{}, nil
+		}
+		return nil, fmt.Errorf("failed to collect rows from table:todo_attachments: %w", err)
+	}
+
+	return attachments, nil
+}
+
+func (r *TodoRepository) DeleteTodoAttachment(ctx context.Context, todoID uuid.UUID, attachmentID uuid.UUID) error {
+	stmt := `
+		DELETE FROM todo_attachments
+		WHERE todo_id=@todo_id AND id=@attachment_id
+	`
+
+	result, err := r.server.DB.Pool.Exec(ctx, stmt, pgx.NamedArgs{
+		"todo_id":       todoID,
+		"attachment_id": attachmentID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		code := "ATTACHMENT_NOT_FOUND"
+		return errs.NewNotFoundError("attachment not found", false, &code)
+	}
+
+	return nil
+}
+
+func (r *TodoRepository) UploadTodoAttachment(ctx context.Context, userID string, todoID uuid.UUID, fileName string, fileSize int64, mimeType string, key string) (*todo.Attachment, error) {
+	stmt := `
+		INSERT INTO todo_attachments (todo_id, name, uploaded_by, download_key, file_size, mime_type)
+		VALUES (@todo_id, @file_name, @uploaded_by, @download_key, @file_size, @mime_type)
+		RETURNING *
+	`
+
+	rows, err := r.server.DB.Pool.Query(ctx, stmt, pgx.NamedArgs{
+		"todo_id":      todoID,
+		"file_name":    fileName,
+		"file_size":    fileSize,
+		"mime_type":    mimeType,
+		"download_key": key,
+		"uploaded_by":  userID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	attachment, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[todo.Attachment])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect rows from table:todo_attachments: %w", err)
+	}
+
+	return &attachment, nil
+}
